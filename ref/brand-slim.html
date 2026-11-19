@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXORUM — Brand guidelines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#000;--graphite:#0d0e10;--steel:#2a2c30;--mute:#80848b;--mercury:#c6c9ce;--hi:#f4f5f6;
+    --chrome:linear-gradient(100deg,#fbfbfc 0%,#a7abb1 17%,#eef0f2 31%,#55595f 47%,#dcdfe2 61%,#8b8f95 77%,#ffffff 100%);
+    --display:'Archivo','Montserrat',system-ui,sans-serif;--skew:-14deg;--cut:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--void);color:var(--mercury);font-family:'Archivo','Inter',system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1280px;margin:0 auto;padding:0 48px}
+  .display{font-family:var(--display);font-style:italic;font-weight:800;font-stretch:115%;color:var(--hi);letter-spacing:-.02em;line-height:.95}
+  .chrome-text{background:var(--chrome);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .cut{clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut))}
+  .panel{background:linear-gradient(180deg,#0f1012,#08090a);position:relative}
+  .panel::before{content:"";position:absolute;inset:0;padding:1px;background:linear-gradient(160deg,#4a4d52,#1a1b1e 40%,#1a1b1e 70%,#3a3d42);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .tag{position:relative;display:inline-block;padding:5px 14px;font-size:13px;color:var(--hi);isolation:isolate}
+  .tag::before{content:"";position:absolute;inset:0;z-index:-1;border:1px solid var(--steel);transform:skewX(var(--skew))}
+  .lab{font-size:13.5px;color:var(--mute)}
+  h3.sec{font-size:clamp(34px,4vw,52px);margin-bottom:14px}
+  .lede{max-width:40em;color:var(--mute);font-size:17px;margin-bottom:40px}
+  section{padding-top:120px}
+
+  /* cover */
+  .cover{position:relative;min-height:760px;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:40px;padding-top:60px;overflow:hidden}
+  .cover::before{content:"";position:absolute;inset:0;background:url("DATA[142KB]") center/cover no-repeat;opacity:.55;
+    -webkit-mask-image:radial-gradient(60% 75% at 72% 50%,#000 30%,transparent 80%);mask-image:radial-gradient(60% 75% at 72% 50%,#000 30%,transparent 80%)}
+  .cover > *{position:relative}
+  .cover-top{position:absolute;left:0;right:0;top:40px;display:flex;justify-content:space-between;align-items:center}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand img{width:46px;height:46px}
+  .brand b{font-family:var(--display);font-style:italic;font-weight:800;font-stretch:118%;font-size:20px;color:var(--hi)}
+  .cover h1{font-size:clamp(64px,8vw,124px);margin:18px 0 26px}
+  .cover p{max-width:28em;font-size:18px}
+  .cover-logo{justify-self:end;width:min(100%,460px);filter:drop-shadow(0 40px 60px rgba(0,0,0,.8))}
+
+  /* logo */
+  .logo-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+  .logo-main{padding:56px;display:grid;place-items:center;min-height:560px}
+  .clear{position:relative;width:340px;aspect-ratio:1}
+  .clear img{position:absolute;inset:0;width:100%;height:100%}
+  .clear .zone{position:absolute;inset:-56px;border:1px dashed rgba(244,245,246,.28)}
+  .clear .zone i{position:absolute;font-style:normal;font-size:12px;color:var(--mute)}
+  .clear .zone i.t{top:18px;left:50%;transform:translateX(-50%)}
+  .clear .zone i.l{left:6px;top:50%;transform:translateY(-50%) rotate(-90deg)}
+  .logo-side{display:grid;grid-template-rows:1fr 1fr;gap:20px}
+  .lockup{padding:40px;display:flex;align-items:center;justify-content:center;gap:22px}
+  .lockup img{width:96px;height:96px}
+  .lockup b{font-family:var(--display);font-style:italic;font-weight:800;font-stretch:118%;font-size:52px;color:var(--hi)}
+  .sizes{padding:40px;display:flex;align-items:flex-end;justify-content:center;gap:34px}
+  .sizes div{text-align:center}
+  .sizes img{display:block;margin:0 auto 12px}
+  .rules{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:20px}
+  .rule{padding:28px 28px 30px}
+  .rule h4{font-family:var(--display);font-style:italic;font-weight:700;font-stretch:108%;font-size:19px;color:var(--hi);margin:12px 0 6px}
+  .rule p{font-size:15px;color:var(--mute)}
+
+  /* coin */
+  .coin-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .coin-card{padding:40px 40px 30px;text-align:center}
+  .coin-card img{width:min(100%,420px);display:block;margin:0 auto 18px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.85))}
+  .coin-card h4{font-family:var(--display);font-style:italic;font-weight:700;font-stretch:108%;font-size:20px;color:var(--hi)}
+  .coin-card p{font-size:15px;color:var(--mute);max-width:30em;margin:6px auto 0}
+
+  /* color */
+  .swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+  .sw{--c:14px;clip-path:polygon(var(--c) 0,100% 0,100% calc(100% - var(--c)),calc(100% - var(--c)) 100%,0 100%,0 var(--c))}
+  .sw .chip{height:190px;position:relative}
+  .sw .chip::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  .sw .meta{background:#08090a;padding:16px 16px 18px}
+  .sw b{display:block;font-family:var(--display);font-style:italic;font-weight:700;font-stretch:106%;font-size:17px;color:var(--hi)}
+  .sw span{display:block;font-size:13.5px;color:var(--mute);font-variant-numeric:tabular-nums}
+  .chrome-bar{margin-top:14px;height:120px;background:var(--chrome);position:relative;display:flex;align-items:flex-end;padding:16px 22px}
+  .chrome-bar b{position:relative;isolation:isolate;padding:6px 16px;font-family:var(--display);font-style:italic;font-weight:800;font-stretch:110%;font-size:18px;color:var(--hi)}
+  .chrome-bar b::before{content:"";position:absolute;inset:0;z-index:-1;background:#000;transform:skewX(var(--skew))}
+  .chrome-stops{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--mute);font-variant-numeric:tabular-nums}
+  .ratio{margin-top:14px;display:flex;height:18px}
+  .ratio i{display:block;height:100%}
+
+  /* type */
+  .type-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
+  .type-hero{padding:46px 46px 40px}
+  .type-hero .aa{font-size:200px;line-height:.82;margin-bottom:22px}
+  .type-hero .set{font-family:var(--display);font-style:italic;font-weight:800;font-stretch:115%;font-size:20px;line-height:1.5;color:var(--hi);letter-spacing:.02em}
+  .scale{padding:34px 40px}
+  .scale div{display:flex;align-items:baseline;justify-content:space-between;gap:20px;padding:16px 0;border-bottom:1px solid #1b1c1f}
+  .scale div:last-child{border-bottom:0}
+  .scale .s1{font-family:var(--display);font-style:italic;font-weight:800;font-stretch:115%;color:var(--hi);font-size:46px;line-height:1}
+  .scale .s2{font-family:var(--display);font-style:italic;font-weight:800;font-stretch:112%;color:var(--hi);font-size:30px;line-height:1}
+  .scale .s3{font-family:var(--display);font-style:italic;font-weight:700;font-stretch:108%;color:var(--hi);font-size:21px}
+  .scale .s4{font-size:17.5px;color:var(--mercury)}
+  .scale .s5{font-size:14px;color:var(--mute)}
+  .scale em{font-style:normal;font-size:13px;color:var(--mute);white-space:nowrap}
+
+  /* shape language */
+  .shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .shape{padding:30px 28px 28px;min-height:300px;display:flex;flex-direction:column}
+  .shape .demo{flex:1;display:grid;place-items:center;min-height:150px}
+  .shape h4{font-family:var(--display);font-style:italic;font-weight:700;font-stretch:108%;font-size:19px;color:var(--hi);margin:18px 0 6px}
+  .shape p{font-size:15px;color:var(--mute)}
+  .angle svg{width:150px;height:150px}
+  .demo-cut{width:150px;height:110px;background:linear-gradient(160deg,#4a4d52,#1a1b1e 50%,#3a3d42);clip-path:polygon(22px 0,100% 0,100% calc(100% - 22px),calc(100% - 22px) 100%,0 100%,0 22px)}
+  .demo-btn{padding:16px 32px;background:var(--chrome);color:#050505;font-weight:600;font-size:15px;clip-path:polygon(13px 0,100% 0,calc(100% - 13px) 100%,0 100%)}
+  .demo-spark svg{width:110px;height:110px}
+
+  /* usage */
+  .usage{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .use{padding:0 0 24px;overflow:hidden}
+  .use .pic{aspect-ratio:1;display:grid;place-items:center;position:relative;margin-bottom:18px;overflow:hidden}
+  .use h4{font-family:var(--display);font-style:italic;font-weight:700;font-stretch:108%;font-size:18px;color:var(--hi);padding:0 22px}
+  .use p{font-size:14.5px;color:var(--mute);padding:4px 22px 0}
+  .do-dont .pic::after{content:"";position:absolute;left:14px;top:14px;width:26px;height:26px;border-radius:50%;display:grid}
+  .mark-ok,.mark-no{position:absolute;left:14px;top:14px;width:28px;height:28px;display:grid;place-items:center;font-weight:700;font-size:15px}
+  .mark-ok{background:var(--hi);color:#000}
+  .mark-no{background:#3a1d1d;color:#ffb3b3}
+
+  footer{padding:120px 0 60px}
+  footer .row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #151619;padding-top:24px;font-size:14px;color:var(--mute)}
+
+  @media (max-width:980px){
+    .cover,.logo-grid,.coin-grid,.type-grid{grid-template-columns:1fr}
+    .cover-logo{justify-self:center}
+    .rules,.usage{grid-template-columns:1fr 1fr}
+    .swatches{grid-template-columns:repeat(3,1fr)}
+    .shape-grid{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:600px){
+    .wrap{padding:0 20px}
+    .cover{padding-top:120px;min-height:0}
+    .cover-top .tag{font-size:11px;padding:4px 10px;white-space:nowrap}
+    .brand b{font-size:17px}.brand img{width:38px;height:38px}
+    .cover::before{opacity:.35}
+    .rules,.usage,.shape-grid{grid-template-columns:1fr}
+    .swatches{grid-template-columns:1fr 1fr}
+    .chrome-stops{flex-wrap:wrap}
+    .type-hero .aa{font-size:140px}
+    .lockup b{font-size:34px}.lockup img{width:64px;height:64px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="cover">
+    <div class="cover-top">
+      <div class="brand"><img src="DATA[48KB]" alt=""><b>NEXORUM</b></div>
+      <span class="tag">Brand guidelines · v1.0 · 2026</span>
+    </div>
+    <div>
+      <span class="lab">Identity system</span>
+      <h1 class="display">Liquid chrome,<br>cut sharp.</h1>
+      <p>How the Nexorum mark, coin, colors, type and shapes work together, so every touchpoint looks like it came from the same place.</p>
+    </div>
+    <img class="cover-logo" src="DATA[582KB]" alt="Nexorum square logo">
+  </header>
+
+  <!-- LOGO -->
+  <section>
+    <h3 class="display sec">The mark</h3>
+    <p class="lede">A liquid-chrome N on a black square with two cut corners. The cut corners and the N's slant are the two shapes the whole identity is built from.</p>
+    <div class="logo-grid">
+      <div class="panel cut logo-main">
+        <div class="clear"><div class="zone"><i class="t">Clear space = ⅙ of logo width</i><i class="l">⅙ W</i></div><img src="DATA[582KB]" alt="Logo with clear space"></div>
+      </div>
+      <div class="logo-side">
+        <div class="panel cut lockup"><img src="DATA[48KB]" alt=""><b>NEXORUM</b></div>
+        <div class="panel cut sizes">
+          <div><img src="DATA[48KB]" width="96" alt=""><span class="lab">96 px</span></div>
+          <div><img src="DATA[48KB]" width="48" alt=""><span class="lab">48 px</span></div>
+          <div><img src="DATA[48KB]" width="24" alt=""><span class="lab">24 px · minimum</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="rules">
+      <div class="panel cut rule"><span class="tag">Clear space</span><h4>Give it room</h4><p>Keep one sixth of the logo's width free on every side. Nothing else enters that zone.</p></div>
+      <div class="panel cut rule"><span class="tag">Background</span><h4>Black first</h4><p>The mark lives on pure black or the liquid-chrome texture. Never place it on light or busy photos.</p></div>
+      <div class="panel cut rule"><span class="tag">Wordmark</span><h4>Name to the right</h4><p>NEXORUM in Archivo ExtraBold Italic, cap height equal to half the square, spaced one third of the square away.</p></div>
+    </div>
+  </section>
+
+  <!-- COIN -->
+  <section>
+    <h3 class="display sec">The coin</h3>
+    <p class="lede">The 3D coin is the identity's hero object. Use it for launches, social posts and anywhere the brand needs a single memorable image.</p>
+    <div class="coin-grid">
+      <div class="panel cut coin-card"><img src="DATA[317KB]" alt="Coin front"><h4>Front</h4><p>The N in liquid chrome on a black mirror field, NEXORUM engraved around a raised chrome ring.</p></div>
+      <div class="panel cut coin-card"><img src="DATA[309KB]" alt="Coin back"><h4>Back</h4><p>The square mark with its cut-corner frame, ringed by the line "Design that defines your brand".</p></div>
+    </div>
+  </section>
+
+  <!-- COLOR -->
+  <section>
+    <h3 class="display sec">Color</h3>
+    <p class="lede">Strictly monochrome. Black does most of the work; chrome is the only accent and appears on one element per view.</p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#000"></div><div class="meta"><b>Void</b><span>#000000</span><span>Backgrounds</span></div></div>
+      <div class="sw"><div class="chip" style="background:#0d0e10"></div><div class="meta"><b>Graphite</b><span>#0D0E10</span><span>Panels, cards</span></div></div>
+      <div class="sw"><div class="chip" style="background:#2a2c30"></div><div class="meta"><b>Steel</b><span>#2A2C30</span><span>Borders, dividers</span></div></div>
+      <div class="sw"><div class="chip" style="background:#80848b"></div><div class="meta"><b>Mute</b><span>#80848B</span><span>Secondary text</span></div></div>
+      <div class="sw"><div class="chip" style="background:#c6c9ce"></div><div class="meta"><b>Mercury</b><span>#C6C9CE</span><span>Body text</span></div></div>
+      <div class="sw"><div class="chip" style="background:#f4f5f6"></div><div class="meta"><b>Highlight</b><span>#F4F5F6</span><span>Headlines</span></div></div>
+    </div>
+    <div class="chrome-bar sw"><b>Chrome · gradient 100°</b></div>
+    <div class="chrome-stops"><span>#FBFBFC 0%</span><span>#A7ABB1 17%</span><span>#EEF0F2 31%</span><span>#55595F 47%</span><span>#DCDFE2 61%</span><span>#8B8F95 77%</span><span>#FFFFFF 100%</span></div>
+    <div class="ratio" aria-label="Color ratio: 70 percent Void, 15 Graphite, 8 Mercury and Highlight, 5 Steel and Mute, 2 Chrome">
+      <i style="width:70%;background:#000;box-shadow:inset 0 0 0 1px #1d1e21"></i><i style="width:15%;background:#0d0e10"></i><i style="width:8%;background:#c6c9ce"></i><i style="width:5%;background:#2a2c30"></i><i style="width:2%;background:var(--chrome)"></i>
+    </div>
+    <p class="lab" style="margin-top:10px">Ratio: 70 Void · 15 Graphite · 8 Mercury/Highlight · 5 Steel/Mute · 2 Chrome</p>
+  </section>
+
+  <!-- TYPE -->
+  <section>
+    <h3 class="display sec">Typography</h3>
+    <p class="lede">One family, two voices. Archivo ExtraBold Italic at an expanded width for anything that should be seen; Archivo Regular for anything that should be read.</p>
+    <div class="type-grid">
+      <div class="panel cut type-hero">
+        <div class="display aa chrome-text">Aa</div>
+        <span class="lab">Archivo · ExtraBold Italic · width 115%</span>
+        <div class="set" style="margin-top:14px">ABCDEFGHIJKLM<br>NOPQRSTUVWXYZ<br>0123456789 &amp;?!✦</div>
+      </div>
+      <div class="panel cut scale">
+        <div><span class="s1">Display</span><em>clamp 52–92 px · lh 0.9</em></div>
+        <div><span class="s2">Section heading</span><em>38–64 px · lh 1.0</em></div>
+        <div><span class="s3">Card title</span><em>21 px</em></div>
+        <div><span class="s4">Lead paragraph</span><em>17.5 px · Regular</em></div>
+        <div><span class="s5">Label and caption</span><em>14 px · Mute</em></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHAPE -->
+  <section>
+    <h3 class="display sec">Shape language</h3>
+    <p class="lede">Everything leans the same way. Interactive elements borrow the N's slant; containers borrow the logo's cut corners.</p>
+    <div class="shape-grid">
+      <div class="panel cut shape angle"><div class="demo"><svg viewBox="0 0 150 150" fill="none"><path d="M45 140 L95 10" stroke="url(#sg)" stroke-width="6"/><path d="M75 140 V30" stroke="#2a2c30" stroke-dasharray="4 5"/><path d="M75 80 A60 60 0 0 1 88 81.5" stroke="#80848b"/><text x="96" y="76" fill="#c6c9ce" font-size="15" font-family="Archivo,sans-serif">20°</text><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#6f737a"/><stop offset="1" stop-color="#eceef0"/></linearGradient></defs></svg></div><h4>The 20° slant</h4><p>Taken from the N's strokes. Used for ticks, bands and motion paths.</p></div>
+      <div class="panel cut shape"><div class="demo"><div class="demo-cut"></div></div><h4>Cut corners</h4><p>Top-left and bottom-right trimmed on every card, panel and frame.</p></div>
+      <div class="panel cut shape"><div class="demo"><span class="demo-btn">Start a project</span></div><h4>Parallelograms</h4><p>Buttons, tags and chips are skewed −14°, never rounded pills.</p></div>
+      <div class="panel cut shape demo-spark"><div class="demo"><svg viewBox="0 0 100 100"><defs><linearGradient id="sp" gradientUnits="userSpaceOnUse" x1="10" y1="0" x2="90" y2="100"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="#b7bbc1"/><stop offset=".46" stop-color="#2b2d31"/><stop offset=".54" stop-color="#e9ebee"/><stop offset=".75" stop-color="#7b7f85"/><stop offset="1" stop-color="#f6f7f8"/></linearGradient></defs><path d="M50 0 C53 33 67 47 100 50 C67 53 53 67 50 100 C47 67 33 53 0 50 C33 47 47 33 50 0 Z" fill="url(#sp)"/></svg></div><h4>The sparkle</h4><p>A four-point chrome star. One large and one small per composition, no more.</p></div>
+    </div>
+  </section>
+
+  <!-- DO / DON'T -->
+  <section>
+    <h3 class="display sec">Do and don't</h3>
+    <p class="lede">A few rules that keep the mark looking expensive.</p>
+    <div class="usage do-dont">
+      <div class="panel cut use"><div class="pic" style="background:#000"><span class="mark-ok">✓</span><img src="DATA[48KB]" width="130" alt=""></div><h4>On black</h4><p>Pure black or the chrome texture only.</p></div>
+      <div class="panel cut use"><div class="pic" style="background:#e9e4da"><span class="mark-no">✕</span><img src="DATA[48KB]" width="130" alt=""></div><h4>On light colors</h4><p>The square turns into a sticker. Don't.</p></div>
+      <div class="panel cut use"><div class="pic" style="background:#000"><span class="mark-no">✕</span><img src="DATA[48KB]" width="130" style="transform:rotate(-14deg)" alt=""></div><h4>Rotated or skewed</h4><p>The N already leans. The square stays upright.</p></div>
+      <div class="panel cut use"><div class="pic" style="background:#000"><span class="mark-no">✕</span><img src="DATA[48KB]" width="130" style="filter:sepia(1) saturate(4) hue-rotate(-12deg)" alt=""></div><h4>Recolored</h4><p>No gold, no color tints. Chrome only.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="row"><span>© 2026 Nexorum · Brand guidelines v1.0</span><span>hello@nexorum.io</span></div>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "name": "nexorum",
+  "version": "0.2.0",
+  "description": "Long-term memory for AI agents: notes, transcripts and a markdown wiki as plain files on your machine, plus a dream pass you review before anything changes. CLI, MCP server and Claude Code hooks.",
+  "homepage": "https://nexorum.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usenexorum/nexorum.git",
+    "directory": "cli"
+  },
+  "bugs": {
+    "url": "https://github.com/usenexorum/nexorum/issues"
+  },
+  "type": "module",
+  "bin": {
+    "nexorum": "bin/nexorum.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node test/run.js && node test/behaviors.js && node test/cli-behaviors.js && node test/e2e.js"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "ai-agents",
+    "agent-memory",
+    "long-term-memory",
+    "memory",
+    "claude-code",
+    "codex",
+    "cursor",
+    "llm",
+    "local-first",
+    "markdown",
+    "wiki",
+    "cli"
+  ],
+  "license": "MIT"
+}

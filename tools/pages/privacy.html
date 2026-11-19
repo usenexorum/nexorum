@@ -1,0 +1,18 @@
+<!--meta title="Privacy · Nexorum" desc="What Nexorum stores, where, and what leaves your machine."-->
+<main id="main" class="doc">
+  <div class="wrap narrow">
+    <h1 class="display">Privacy</h1>
+    <p class="lede">Nexorum is software that runs on your machine. We do not run a service that receives your memory.</p>
+    <h2>What the software stores</h2>
+    <p>Notes, transcripts, wiki pages, proposals and their history are plain files under <code>~/.nexorum</code> (or <code>NEXORUM_HOME</code>), one folder per project. Known secret patterns are replaced with <code>[REDACTED:kind]</code> markers before anything is written. This catches known patterns, not everything.</p>
+    <h2>What leaves your machine</h2>
+    <p>Nothing, until you dream. A dream with your own key sends the new transcripts, the new notes and the current wiki pages to the LLM provider you configured, and nowhere else. A dream through your agent (<code>dream_prepare</code> / <code>dream_submit</code>) hands the same material to that agent, which talks to its own provider. There is no telemetry and no account.</p>
+    <h2>This website</h2>
+    <p>The site is static pages. The simulation at <a href="/try/">/try</a> runs in your browser in recorded mode: no model is called and nothing you click is sent or saved. Your hosting provider may keep standard server logs (IP address, time, page requested).</p>
+    <h2>Deleting your data</h2>
+    <p>Delete the project folder under <code>~/.nexorum/spaces/</code>, or the whole <code>~/.nexorum</code> folder. <code>nexorum retention</code> removes old transcripts and history automatically.</p>
+    <h2>Contact</h2>
+    <p>Questions: open an issue on <a href="{{GITHUB}}" target="_blank" rel="noopener">GitHub</a>.</p>
+    <p class="updated">Last updated {{DATE}}.</p>
+  </div>
+</main>

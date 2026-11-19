@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEXORUM — 3D Coin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@1,125,800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#000;color:#c6c9ce;font-family:Inter,system-ui,sans-serif;overflow:hidden}
+  body.stage{background:#000}
+  body.clear{background:transparent}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+  canvas:active{cursor:grabbing}
+  .ui{position:fixed;left:0;right:0;bottom:28px;text-align:center;font-size:14px;color:#80848b;pointer-events:none;letter-spacing:.01em}
+  .ui b{font-family:'Archivo',Montserrat,sans-serif;font-style:italic;font-weight:800;font-stretch:125%;color:#f4f5f6;font-size:15px;margin-right:10px}
+  .capture .ui{display:none}
+</style>
+</head>
+<body class="stage">
+<canvas id="c"></canvas>
+<div class="ui"><b>NEXORUM</b>Drag to spin the coin</div>
+<script>
+(function(){
+  var Q=new URLSearchParams(location.search);
+  var CAP=Q.has('capture'), FRAME=+Q.get('frame')||0, FRAMES=+Q.get('frames')||0, BG=Q.get('bg')||'stage';
+  var RY=Q.has('ry')?+Q.get('ry'):null, RX=Q.has('rx')?+Q.get('rx'):null, REFL=Q.get('refl')!=='0';
+  if(CAP) document.documentElement.classList.add('capture');
+  document.body.className=BG==='clear'?'clear':'stage';
+  if(BG==='clear') document.documentElement.style.background='transparent';
+
+  var c=document.getElementById('c');
+  var gl=c.getContext('webgl',{antialias:true,alpha:true,premultipliedAlpha:true,preserveDrawingBuffer:CAP});
+  if(!gl){ document.querySelector('.ui').textContent='WebGL is not available in this browser.'; return; }
+
+  /* ---------- the coin face, drawn as a height map ---------- */
+  var NL='M95 27 L155 113 C146 104 132 100 122.5 113 L83 210 L2.5 264 Z', NR='M209 241 L149 155 C158 164 172 168 181.5 155 L221 58 L301.5 4 Z';
+  var SPARK='M50 0 C53 33 67 47 100 50 C67 53 53 67 50 100 C47 67 33 53 0 50 C33 47 47 33 50 0 Z';
+  function buildFace(side){
+    var S=2048, C=S/2, cv=document.createElement('canvas'); cv.width=cv.height=S; var x=cv.getContext('2d');
+    function g(v){ var k=Math.round(v*255); return 'rgb('+k+','+k+','+k+')'; }
+    var RF=0.955*C, R1=0.79*C, FONT="italic 800 {px}px Archivo, Montserrat, sans-serif";
+    x.fillStyle='#000'; x.fillRect(0,0,S,S);
+    x.fillStyle=g(.28); x.beginPath(); x.arc(C,C,RF,0,Math.PI*2); x.fill();
+    var ring=document.createElement('canvas'); ring.width=ring.height=S; var t=ring.getContext('2d');
+    t.fillStyle='#000'; t.fillRect(0,0,S,S);
+    // raised chrome ring
+    t.fillStyle=g(.66); t.beginPath(); t.arc(C,C,RF-6,0,Math.PI*2); t.moveTo(C+R1,C); t.arc(C,C,R1,Math.PI*2,0,true); t.closePath(); t.fill('evenodd');
+    // lettering engraved deep (reads dark on bright chrome), measured so spacing is even
+    function ringText(unit,px,track){
+      t.save(); t.translate(C,C); t.font=FONT.replace('{px}',px); t.fillStyle=g(.34); t.textBaseline='middle'; t.textAlign='left';
+      var rr=(R1+RF)/2+3, circ=2*Math.PI*rr, chars=unit.split(''), ws=chars.map(function(ch){ return t.measureText(ch).width+track; });
+      var uw=ws.reduce(function(a,b){return a+b;},0), reps=Math.max(1,Math.floor(circ/uw)), extra=(circ-reps*uw)/(reps*chars.length);
+      var ang=-Math.PI/2;
+      for(var r=0;r<reps;r++) chars.forEach(function(ch,i){ var w=ws[i]+extra; var mid=ang+(w/2)/rr;
+        t.save(); t.rotate(mid); t.translate(rr,0); t.rotate(Math.PI/2); t.fillText(ch,-(ws[i]-track)/2,0); t.restore(); ang+=w/rr; });
+      t.restore();
+    }
+    if(side==='front') ringText('NEXORUM   ✦   ',84,7); else ringText('DESIGN THAT DEFINES YOUR BRAND   ✦   ',62,4);
+    // slanted ticks (same 20° lean as the N) just inside the ring
+    t.fillStyle=g(.58);
+    var TK=120, k=Math.tan(20*Math.PI/180);
+    for(var i=0;i<TK;i++){ var a=i/TK*Math.PI*2; t.save(); t.translate(C+Math.cos(a)*(R1-30),C+Math.sin(a)*(R1-30)); t.rotate(a+Math.PI/2);
+      t.beginPath(); t.moveTo(-4-13*k,-13); t.lineTo(4-13*k,-13); t.lineTo(4+13*k,13); t.lineTo(-4+13*k,13); t.closePath(); t.fill(); t.restore(); }
+    x.save(); x.filter='blur(2.2px)'; x.globalCompositeOperation='lighten'; x.drawImage(ring,0,0); x.restore();
+    // emblem
+    var nt=document.createElement('canvas'); nt.width=nt.height=S; var n=nt.getContext('2d');
+    function drawN(scale,cx,cy){ var w=304*scale,h=268*scale; n.save(); n.translate(cx-w/2,cy-h/2); n.scale(scale,scale); n.fill(new Path2D(NL)); n.fill(new Path2D(NR)); n.restore(); return [w,h]; }
+    function spark(cx,cy,sz){ n.save(); n.translate(cx-sz/2,cy-sz/2); n.scale(sz/100,sz/100); n.fill(new Path2D(SPARK)); n.restore(); }
+    n.fillStyle='#fff';
+    if(side==='front'){
+      var wh=drawN(3.5,C,C-6); spark(C+wh[0]/2+30,C-wh[1]/2-40,92); spark(C-wh[0]/2-20,C+wh[1]/2+44,34);
+    } else {
+      // the square logo: cut-corner frame + N + sparkles
+      var F=1000, cut=118, x0=C-F/2, y0=C-F/2;
+      function frame(inset,lw){ n.save(); n.lineWidth=lw; n.strokeStyle='#fff'; n.beginPath();
+        n.moveTo(x0+cut+inset,y0+inset); n.lineTo(x0+F-inset,y0+inset); n.lineTo(x0+F-inset,y0+F-cut-inset); n.lineTo(x0+F-cut-inset,y0+F-inset); n.lineTo(x0+inset,y0+F-inset); n.lineTo(x0+inset,y0+cut+inset); n.closePath(); n.stroke(); n.restore(); }
+      n.globalAlpha=.72; frame(8,16); n.globalAlpha=.5; frame(40,5); n.globalAlpha=1;
+      var wh2=drawN(2.05,C,C-4); spark(C+wh2[0]/2+46,C-wh2[1]/2-46,80); spark(C-wh2[0]/2-40,C+wh2[1]/2+52,30);
+    }
+    [[14,.62],[7,.85],[2.2,1]].forEach(function(p){ x.save(); x.filter='blur('+p[0]+'px)'; x.globalCompositeOperation='lighten'; x.globalAlpha=p[1]; x.drawImage(nt,0,0); x.restore(); });
+    var out=document.createElement('canvas'); out.width=out.height=S; var o=out.getContext('2d'); o.filter='blur(.8px)'; o.drawImage(cv,0,0);
+    return out;
+  }
+
+  /* ---------- coin geometry: lathe profile with bevelled rim ---------- */
+  var H=.085, prof=[[0,H],[.955,H],[.975,H-.006],[.992,H-.02],[1,H-.04],[1,-H+.04],[.992,-H+.02],[.975,-H+.006],[.955,-H],[0,-H]];
+  var SEG=192, pos=[], nor=[];
+  function pn(i){ // profile normal (r,z) at vertex i, smoothed across the bevel, hard at faces
+    if(i<=1) return [0,1]; if(i>=prof.length-2) return [0,-1];
+    var a=prof[i-1],b=prof[i],cc=prof[i+1];
+    var n1=[ (b[1]-a[1]), -(b[0]-a[0]) ], n2=[ (cc[1]-b[1]), -(cc[0]-b[0]) ];
+    var l1=Math.hypot(n1[0],n1[1])||1, l2=Math.hypot(n2[0],n2[1])||1; var nn=[n1[0]/l1+n2[0]/l2, n1[1]/l1+n2[1]/l2]; var l=Math.hypot(nn[0],nn[1]); return [nn[0]/l,nn[1]/l];
+  }
+  for(var s=0;s<SEG;s++){
+    var a0=s/SEG*Math.PI*2, a1=(s+1)/SEG*Math.PI*2;
+    for(var i=0;i<prof.length-1;i++){
+      var p0=prof[i],p1=prof[i+1], n0=pn(i), n1=pn(i+1);
+      if(i===0){ n0=[0,1]; n1=[0,1]; } if(i===prof.length-2){ n0=[0,-1]; n1=[0,-1]; }
+      var quad=[[p0,n0,a0],[p1,n1,a0],[p1,n1,a1],[p0,n0,a0],[p1,n1,a1],[p0,n0,a1]];
+      quad.forEach(function(q){ var r=q[0][0], z=q[0][1], ca=Math.cos(q[2]), sa=Math.sin(q[2]);
+        pos.push(r*ca, r*sa, z); nor.push(q[1][0]*ca, q[1][0]*sa, q[1][1]); });
+    }
+  }
+  var COUNT=pos.length/3;
+
+  var vs=['attribute vec3 aP;attribute vec3 aN;uniform mat4 uM;uniform mat4 uVP;uniform mat3 uNM;varying vec3 vW;varying vec3 vO;varying vec3 vON;varying vec3 vWN;',
+    'void main(){vec4 w=uM*vec4(aP,1.0);vW=w.xyz;vO=aP;vON=aN;vWN=uNM*aN;gl_Position=uVP*w;}'].join('\n');
+  var fs=['precision highp float;',
+    'varying vec3 vW;varying vec3 vO;varying vec3 vON;varying vec3 vWN;',
+    'uniform sampler2D uH;uniform sampler2D uH2;uniform mat3 uNM;uniform vec3 uCam;uniform float uPh;uniform float uRefl;uniform float uFloor;uniform vec2 uLook;',
+    'float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
+    'float vn(vec2 p){vec2 i=floor(p);vec2 f=fract(p);vec2 u=f*f*(3.0-2.0*f);return mix(mix(h21(i),h21(i+vec2(1,0)),u.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),u.x),u.y);}',
+    'float liq(vec2 p){return vn(p+0.85*vec2(vn(p*0.6+vec2(3.1,1.7)),vn(p*0.6+vec2(8.4,5.2))));}',
+    'float SG;float HT(vec2 uv){return mix(texture2D(uH2,uv).r,texture2D(uH,uv).r,step(0.0,SG));}',
+    'vec3 env(vec3 r,float off){',
+    ' float a=atan(r.x,r.z)+0.5*sin(uPh)+uLook.x*0.6;',
+    ' float y=r.y+off+0.06*sin(a*3.0+uPh*2.0)+uLook.y*0.1;',
+    ' vec3 sky=mix(vec3(0.56,0.58,0.62),vec3(1.0),smoothstep(0.02,0.8,y));',
+    ' vec3 gr=mix(vec3(0.025,0.027,0.03),vec3(0.28,0.29,0.31),smoothstep(-0.95,-0.04,y));',
+    ' vec3 c=y>0.0?sky:gr; c*=smoothstep(0.0,0.05,abs(y));',
+    ' float s1=smoothstep(0.955,0.992,cos(a-0.95))*smoothstep(-0.15,0.25,y);',
+    ' float s2=smoothstep(0.975,0.997,cos(a+1.75));',
+    ' float s3=smoothstep(0.035,0.0,abs(y-0.42));',
+    ' float s4=smoothstep(0.985,0.999,cos(a+2.9))*step(-0.2,y);',
+    ' c+=vec3(1.0)*(s1*1.1+s2*0.9+s4*0.7)+vec3(0.85)*s3*0.5;',
+    ' c*=1.0-0.75*smoothstep(0.955,0.99,cos(a+0.25))*smoothstep(-0.05,0.2,y);',
+    ' return c;}',
+    'void main(){',
+    ' vec3 on=normalize(vON); vec3 n=on; float ao=1.0; float rf=1.0; float off=0.28; float r=length(vO.xy);',
+    ' if(abs(on.z)>0.9 && r<0.955){',
+    '  float sg=sign(on.z); SG=sg; vec2 uv=vec2(sg*vO.x*0.5+0.5, 0.5-vO.y*0.5);',
+    '  float e=1.0/2048.0; float h0=HT(uv);',
+    '  float hx=(HT(uv+vec2(e,0.0))-HT(uv-vec2(e,0.0)))/(2.0*e); float hy=(HT(uv+vec2(0.0,e))-HT(uv-vec2(0.0,e)))/(2.0*e);',
+    '  float amp=0.016; vec2 g=vec2(hx*0.5*sg, -hy*0.5)*amp;',
+    '  n=normalize(vec3(-g.x,-g.y,sg));',
+    '  if(h0>0.86){ vec2 q=vO.xy*1.7+vec2(cos(uPh),sin(uPh))*0.9; float ee=0.03; float l0=liq(q); float lx=liq(q+vec2(ee,0.0)); float ly=liq(q+vec2(0.0,ee));',
+    '    n=normalize(n-0.34*vec3((lx-l0)/ee,(ly-l0)/ee,0.0)); off=0.1; }',
+    '  if(h0<0.33){ vec2 q2=vO.xy*1.6+vec2(cos(uPh),sin(uPh))*0.6; float e2=0.03; float m0=liq(q2); float mx=liq(q2+vec2(e2,0.0)); float my=liq(q2+vec2(0.0,e2));',
+    '    n=normalize(n-0.16*vec3((mx-m0)/e2,(my-m0)/e2,0.0)); }',
+    '  rf=mix(0.13,1.0,smoothstep(0.37,0.5,h0)); ao=mix(0.7,1.0,smoothstep(0.3,0.62,h0));',
+    ' } else if(abs(on.z)<0.35){',
+    '  float a=atan(vO.y,vO.x); float gr=sin(a*190.0); vec3 tg=vec3(-sin(a),cos(a),0.0);',
+    '  n=normalize(on+tg*gr*0.42); ao=0.86+0.14*abs(gr);',
+    ' }',
+    ' vec3 N=normalize(uNM*n); vec3 V=normalize(uCam-vW); vec3 R=reflect(-V,N);',
+    ' vec3 col=env(R,off)*ao*rf;',
+    ' float fr=pow(1.0-max(dot(N,V),0.0),3.0); col=mix(col*0.95,vec3(1.0)*mix(0.35,1.0,rf),fr*0.28);',
+    ' col=pow(clamp(col,0.0,1.0),vec3(1.1));',
+    ' float al=1.0; if(uRefl>0.5){al=0.22*smoothstep(uFloor-1.2,uFloor,vW.y);col*=0.8;}',
+    ' gl_FragColor=vec4(col*al,al);',
+    '}'].join('\n');
+  function sh(t,src){ var o=gl.createShader(t); gl.shaderSource(o,src); gl.compileShader(o); if(!gl.getShaderParameter(o,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; }
+  var pr=gl.createProgram(); gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs)); gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs)); gl.linkProgram(pr); gl.useProgram(pr);
+  var _bufs={}; function buf(d,name){ var b=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,b); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(d),gl.STATIC_DRAW); var l=gl.getAttribLocation(pr,name); gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l,3,gl.FLOAT,false,0,0); _bufs[name]=b; }
+  buf(pos,'aP'); buf(nor,'aN');
+  var U={}; ['uM','uVP','uNM','uCam','uPh','uRefl','uFloor','uLook','uH','uH2'].forEach(function(k){ U[k]=gl.getUniformLocation(pr,k); });
+  var LOC={aP:gl.getAttribLocation(pr,'aP'),aN:gl.getAttribLocation(pr,'aN')}, BUF={};
+  /* stage background: the same liquid chrome as the website hero, plus four chrome sparkles */
+  var bvs='attribute vec2 a;varying vec2 vU;void main(){vU=a*0.5+0.5;gl_Position=vec4(a,0.0,1.0);}';
+  var bfs=['precision highp float;varying vec2 vU;uniform vec2 uRes;uniform float uPh;',
+    'vec2 hash(vec2 p){p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));return -1.0+2.0*fract(sin(p)*43758.5453123);}',
+    'float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);vec2 u=f*f*(3.0-2.0*f);return mix(mix(dot(hash(i),f),dot(hash(i+vec2(1.0,0.0)),f-vec2(1.0,0.0)),u.x),mix(dot(hash(i+vec2(0.0,1.0)),f-vec2(0.0,1.0)),dot(hash(i+vec2(1.0,1.0)),f-vec2(1.0,1.0)),u.x),u.y);}',
+    'float fbm(vec2 p){float v=0.0;float a=0.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);for(int i=0;i<5;i++){v+=a*noise(p);p=m*p;a*=0.5;}return v;}',
+    'float star(vec2 p,vec2 c,float s){vec2 d=abs(p-c)/s;return sqrt(d.x)+sqrt(d.y);}',
+    'void main(){vec2 p=(vU-0.5)*vec2(uRes.x/uRes.y,1.0)*1.6;vec2 fl=vec2(cos(uPh),sin(uPh))*0.35;',
+    ' vec2 q=vec2(fbm(p*1.3+fl),fbm(p*1.3+vec2(5.2,1.3)-fl));vec2 r=vec2(fbm(p*1.5+1.8*q+vec2(1.7,9.2)+fl*1.4),fbm(p*1.5+1.8*q+vec2(8.3,2.8)-fl*1.2));',
+    ' float f=fbm(p*1.1+2.2*r);float h=f*3.0+r.y*1.5+p.y*0.6;float base=pow(0.5+0.5*sin(h*5.0),2.5);float strip=pow(0.5+0.5*sin(h*11.0+1.3),24.0);',
+    ' vec3 col=mix(vec3(0.01),vec3(0.42,0.44,0.47),base)+strip*vec3(0.55,0.57,0.6);',
+    ' float vg=length((vU-vec2(0.5,0.47))*vec2(uRes.x/uRes.y,1.0));col*=0.32*smoothstep(0.95,0.15,vg);',
+    ' col*=1.0-0.75*smoothstep(0.5,0.0,length((vU-vec2(0.5,0.56))*vec2(uRes.x/uRes.y,1.0)));',
+    ' vec2 P=vU*vec2(uRes.x/uRes.y,1.0);',
+    ' vec3 S[4];S[0]=vec3(0.2,0.78,0.034);S[1]=vec3(0.83,0.74,0.022);S[2]=vec3(0.76,0.26,0.014);S[3]=vec3(0.15,0.3,0.011);',
+    ' for(int i=0;i<4;i++){vec2 c=S[i].xy*vec2(uRes.x/uRes.y,1.0);float sz=S[i].z*(0.85+0.15*sin(uPh*2.0+float(i)*1.7));float v=star(P,c,sz);',
+    '  float m=smoothstep(1.02,0.96,v);vec2 d=(P-c)/sz;float sh=0.55+0.45*sin((d.x-d.y)*2.2+1.0+uPh);col=mix(col,vec3(0.78,0.8,0.83)*sh+0.22,m);',
+    '  col+=vec3(0.9)*0.07*exp(-dot(P-c,P-c)/(sz*sz*6.0));}',
+    ' gl_FragColor=vec4(col,1.0);}'].join('\n');
+  var bp=gl.createProgram(); gl.attachShader(bp,sh(gl.VERTEX_SHADER,bvs)); gl.attachShader(bp,sh(gl.FRAGMENT_SHADER,bfs)); gl.linkProgram(bp);
+  var bb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,bb); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+  var bA=gl.getAttribLocation(bp,'a'), bRes=gl.getUniformLocation(bp,'uRes'), bPh=gl.getUniformLocation(bp,'uPh');
+  BUF.p=null;
+  function drawBg(ph){
+    gl.useProgram(bp); gl.disable(gl.DEPTH_TEST); gl.disableVertexAttribArray(LOC.aN);
+    gl.bindBuffer(gl.ARRAY_BUFFER,bb); gl.enableVertexAttribArray(bA); gl.vertexAttribPointer(bA,2,gl.FLOAT,false,0,0);
+    gl.uniform2f(bRes,c.width,c.height); gl.uniform1f(bPh,ph); gl.drawArrays(gl.TRIANGLES,0,3);
+    gl.useProgram(pr); gl.enable(gl.DEPTH_TEST);
+    gl.bindBuffer(gl.ARRAY_BUFFER,BUF.p); gl.enableVertexAttribArray(LOC.aP); gl.vertexAttribPointer(LOC.aP,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,BUF.n); gl.enableVertexAttribArray(LOC.aN); gl.vertexAttribPointer(LOC.aN,3,gl.FLOAT,false,0,0);
+  }
+  gl.enable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+
+  function mul(a,b){ var o=new Float32Array(16); for(var i=0;i<4;i++) for(var j=0;j<4;j++){ var s=0; for(var k=0;k<4;k++) s+=a[k*4+j]*b[i*4+k]; o[i*4+j]=s; } return o; }
+  function persp(f,a,n,r){ var t=1/Math.tan(f/2),o=new Float32Array(16); o[0]=t/a;o[5]=t;o[10]=(r+n)/(n-r);o[11]=-1;o[14]=2*r*n/(n-r); return o; }
+  function tr(x,y,z){ return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1]); }
+  function sc(x,y,z){ return new Float32Array([x,0,0,0,0,y,0,0,0,0,z,0,0,0,0,1]); }
+  function rY(a){ var c=Math.cos(a),s=Math.sin(a); return new Float32Array([c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1]); }
+  function rX(a){ var c=Math.cos(a),s=Math.sin(a); return new Float32Array([1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1]); }
+  function rZ(a){ var c=Math.cos(a),s=Math.sin(a); return new Float32Array([c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1]); }
+  function nm(m){ return new Float32Array([m[0],m[1],m[2],m[4],m[5],m[6],m[8],m[9],m[10]]); }
+
+  var CAM=[0,0,Q.has('cam')?+Q.get('cam'):4.6], FLOOR=Q.has('floor')?+Q.get('floor'):-1.12, LIFT=Q.has('lift')?+Q.get('lift'):.16;
+  function resize(){ var dpr=CAP?1:Math.min(window.devicePixelRatio||1,2); c.width=Math.round(innerWidth*dpr); c.height=Math.round(innerHeight*dpr); gl.viewport(0,0,c.width,c.height); }
+  resize(); window.addEventListener('resize',resize);
+
+  var state={ry:RY!=null?RY:.62, rx:RX!=null?RX:-.22, vy:0, drag:false, lx:0, look:[0,0]};
+  function draw(ph,ry,rx){
+    var asp=c.width/c.height, fov=asp<1?0.82:0.62;
+    var VP=mul(persp(fov,asp,.1,50),tr(-CAM[0],-CAM[1],-CAM[2]));
+    var M=mul(tr(0,LIFT,0),mul(rX(rx),mul(rY(ry),rZ(.0))));
+    var Mr=mul(tr(0,FLOOR,0),mul(sc(1,-1,1),mul(tr(0,-FLOOR,0),M)));
+    gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    if(BG==='stage'&&window.__stageBg!==false) drawBg(ph);
+    gl.uniformMatrix4fv(U.uVP,false,VP); gl.uniform3fv(U.uCam,CAM); gl.uniform1f(U.uPh,ph); gl.uniform1f(U.uFloor,FLOOR); gl.uniform2f(U.uLook,state.look[0],state.look[1]); gl.uniform1i(U.uH,0); gl.uniform1i(U.uH2,1);
+    if(REFL&&(BG!=='clear'||window.__forceRefl)){ gl.uniformMatrix4fv(U.uM,false,Mr); gl.uniformMatrix3fv(U.uNM,false,nm(Mr)); gl.uniform1f(U.uRefl,1); gl.drawArrays(gl.TRIANGLES,0,COUNT); gl.clear(gl.DEPTH_BUFFER_BIT); }
+    gl.uniformMatrix4fv(U.uM,false,M); gl.uniformMatrix3fv(U.uNM,false,nm(M)); gl.uniform1f(U.uRefl,0); gl.drawArrays(gl.TRIANGLES,0,COUNT);
+  }
+
+  function start(){
+    BUF.p=_bufs.aP; BUF.n=_bufs.aN;
+    [['front',gl.TEXTURE0],['back',gl.TEXTURE1]].forEach(function(f){
+      var face=buildFace(f[0]), tex=gl.createTexture(); gl.activeTexture(f[1]); gl.bindTexture(gl.TEXTURE_2D,tex);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,face); gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    });
+    if(Q.has('seq')){
+      window.renderFrame=function(i,n,refl,stage){
+        window.__forceRefl=!!refl; REFL=!!refl; BG=stage?'stage':'clear';
+        var ph=i/n*Math.PI*2, ry=(RY||0)+ph, rx=(RX!=null?RX:-.14)+Math.sin(ph)*.05;
+        draw(ph,ry,rx); return c.toDataURL('image/png');
+      };
+      window.__done=true; return;
+    }
+    if(CAP){
+      var ph=FRAMES?FRAME/FRAMES*Math.PI*2:0.9;
+      var ry=FRAMES?(RY||0)+ph:state.ry, rx=FRAMES?(RX!=null?RX:-.14)+Math.sin(ph)*.05:state.rx;
+      draw(ph,ry,rx); window.__done=true; return;
+    }
+    var last=performance.now(), t0=last;
+    c.addEventListener('pointerdown',function(e){ state.drag=true; state.lx=e.clientX; c.setPointerCapture(e.pointerId); });
+    c.addEventListener('pointermove',function(e){ state.look=[e.clientX/innerWidth*2-1, e.clientY/innerHeight*2-1]; if(!state.drag) return; var dx=e.clientX-state.lx; state.lx=e.clientX; state.vy=dx*.012; state.ry+=dx*.012; });
+    c.addEventListener('pointerup',function(){ state.drag=false; });
+    var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    (function loop(now){
+      var dt=Math.min(.05,(now-last)/1000); last=now;
+      if(!state.drag){ state.vy*=Math.pow(.04,dt); state.ry+=(reduce?0:.45)*dt+state.vy; }
+      draw(((now-t0)/1000)*.35, state.ry, state.rx+Math.sin((now-t0)/1800)*.04);
+      requestAnimationFrame(loop);
+    })(last);
+  }
+  (document.fonts&&document.fonts.load?Promise.race([Promise.all([document.fonts.load('italic 800 92px Archivo'),document.fonts.load('italic 800 92px Montserrat')]),new Promise(function(r){setTimeout(r,2000);})]):Promise.resolve()).then(start,start);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "name": "nexorum-site-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Serves the Nexorum website and the capped proxy behind the live simulation at /try.",
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": { "start": "node server.mjs", "test": "node test.mjs && node test-engine.mjs" },
+  "engines": { "node": ">=22" },
+  "dependencies": { "@anthropic-ai/sdk": "^1.10.0" }
+}

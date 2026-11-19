@@ -1,0 +1,224 @@
+<!--meta title="Docs · Nexorum" desc="Nexorum documentation: quickstart, concepts, on-disk layout, CLI reference, MCP server, Claude Code hooks, dreaming, search, security and FAQ."-->
+<main id="main" class="doc">
+  <div class="wrap">
+    <div class="docs-grid">
+      <nav class="toc" aria-label="On this page">
+        <b>Start</b><a href="#quickstart">Quickstart</a><a href="#init">What init changes</a><a href="#first">Your first session</a><a href="#dream-start">Dream, review, apply</a>
+        <b>Concepts</b><a href="#concepts">The four layers</a><a href="#spaces">Space = project</a><a href="#layout">On-disk layout</a><a href="#history">History and restore</a>
+        <b>Reference</b><a href="#cli">CLI reference</a><a href="#mcp">MCP server</a><a href="#hooks">Claude Code hooks</a><a href="#dreaming">Dreaming</a><a href="#search">Search</a><a href="#security">Security model</a>
+        <b>More</b><a href="#examples">Examples</a><a href="#troubleshooting">Troubleshooting</a><a href="#try">Simulation</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a>
+      </nav>
+      <article>
+        <h1 class="display">Docs</h1>
+        <p class="lede">Local-first memory for coding agents: plain files you own, a background dream that reviews them, and nothing changes until you approve it.</p>
+
+        <h2 id="quickstart">Quickstart</h2>
+        <p>Everything lives as plain files on your machine; there is no account and no hosted service. Requires Node 22 or newer. Run <code>init</code>: it finds the agents on this machine and wires up the ones it finds.</p>
+        <pre><code>npx nexorum init</code></pre>
+
+        <h3 id="init">What init changes</h3>
+        <ul>
+          <li><b>Claude Code:</b> merges a SessionStart and a Stop hook into <code>~/.claude/settings.json</code> (created if missing), backing the file up to <code>settings.json.nexorum-bak</code> before the first change. Existing hooks are never removed, and running init twice does not add them twice. It registers the MCP server with <code>claude mcp add nexorum -- npx -y nexorum mcp</code>, or prints that command if <code>claude</code> is not on your PATH.</li>
+          <li><b>Recall before every prompt (optional):</b> <code>npm install -g nexorum</code>, then <code>nexorum init --claude-code --prompt-recall</code> adds a UserPromptSubmit hook. It needs the installed command because it runs before every prompt, where <code>npx</code> start-up time adds up.</li>
+          <li><b>Codex:</b> runs <code>codex mcp add nexorum -- npx -y nexorum mcp</code> (or prints it with the TOML), and writes a short marked block into <code>AGENTS.md</code> in the current folder so Codex actually recalls on its own. Your text is kept and a backup is written; <code>--dir</code> picks another folder, <code>--no-agents-md</code> skips it.</li>
+          <li><b>Hermes, Cursor, Claude Desktop:</b> adds the MCP server to their configuration, with a backup.</li>
+        </ul>
+        <p>Nothing else. Preview with <code>npx nexorum init --dry-run</code>. Any other MCP client can run <code>npx -y nexorum mcp</code>.</p>
+
+        <h3 id="first">Your first session</h3>
+        <p>Start your agent as usual, inside a project folder. At session start the hook injects a small digest of that project's memory (empty at first). The agent can call tools such as <code>remember</code> and <code>recall</code>. When the session stops, the transcript is saved, with secrets scrubbed, as a pending transcript. You can add notes yourself too:</p>
+        <pre><code>nexorum remember "Run tests with pnpm test:unit, not npm test"
+nexorum recall "how do I run the tests"
+nexorum status</code></pre>
+
+        <h3 id="dream-start">Dream, review, apply</h3>
+        <p>Once a few sessions have piled up, consolidate them into the wiki. With your own key:</p>
+        <pre><code>export ANTHROPIC_API_KEY="..."
+nexorum dream          # prints what it selected and a token estimate, then asks Proceed? [y/N]
+nexorum proposals
+nexorum diff
+nexorum apply          # or: nexorum reject</code></pre>
+        <p>Without a key, ask your agent to dream: it calls <code>dream_prepare</code>, writes the pages and calls <code>dream_submit</code>. Either way the result is a proposal. <code>apply</code> writes each changed page to the live wiki but skips any page you changed since the dream started, and lists it. Every write is a version you can restore.</p>
+
+        <h2 id="concepts">Concepts</h2>
+        <h3>The four layers</h3>
+        <table>
+          <tr><th>Layer</th><th>What it is</th><th>Where</th></tr>
+          <tr><td>Transcripts</td><td>A record of a session (user, assistant and tool events), secrets scrubbed. Raw material for dreaming.</td><td><code>transcripts/&lt;id&gt;.json</code></td></tr>
+          <tr><td>Notes</td><td>Short memories added by an agent (<code>remember</code>) or by you.</td><td><code>notes.jsonl</code></td></tr>
+          <tr><td>Wiki</td><td>Small linked markdown pages, organised by dreams and editable by you, with an index.</td><td><code>wiki/</code></td></tr>
+          <tr><td>Context</td><td>The top layer: the index, kept small and injected at session start (about 4,096 characters; the Claude Code hook caps it at 10,000).</td><td><code>wiki/_index.md</code></td></tr>
+        </table>
+        <h3 id="spaces">Space = project</h3>
+        <p>Memory is split into spaces. A space is chosen by <code>--space NAME</code>, otherwise <code>$NEXORUM_SPACE</code>, otherwise the current folder's name (characters outside <code>A-Za-z0-9_.-</code> become <code>-</code>, at most 64 characters). One project is one space, and projects do not see each other's memory.</p>
+        <h3 id="layout">On-disk layout</h3>
+        <p>Everything is under <code>$NEXORUM_HOME</code> (default <code>~/.nexorum</code>). Per space, under <code>spaces/&lt;space&gt;/</code>:</p>
+        <pre><code>wiki/            your live markdown pages; /deploys.md is wiki/deploys.md
+  _index.md      the index (the context digest)
+transcripts/     one file per recorded session
+notes.jsonl      one note per line
+history/         a copy of every page each time it changed, plus a log
+proposals/       each dream's staged wiki, waiting for your review</code></pre>
+        <p>Folders inside <code>wiki/</code> are allowed. Writes are atomic (temporary file, then rename). The wiki is ordinary markdown: edit it, or commit it to git. If you change a page after a dream started, <code>apply</code> skips it instead of overwriting you.</p>
+        <h3 id="history">History and restore</h3>
+        <pre><code>nexorum history
+nexorum history /deploys.md
+nexorum restore /deploys.md --version 3
+nexorum retention --days 90</code></pre>
+
+        <h2 id="cli">CLI reference</h2>
+        <p>One binary, <code>nexorum</code>. <code>npx nexorum &lt;command&gt;</code> works without installing anything. Global flags: <code>--space NAME</code>, <code>--help</code>, <code>--version</code>. Exit codes: <code>0</code> ok, <code>1</code> runtime error, <code>2</code> usage or configuration error.</p>
+        <table>
+          <tr><th>Command</th><th>What it does</th></tr>
+          <tr><td><code>init</code></td><td>Wire hooks and the MCP server into the clients it finds. <code>--claude-code --codex --hermes --cursor --claude-desktop --all --dry-run --home DIR --dir DIR --no-agents-md --prompt-recall</code></td></tr>
+          <tr><td><code>mcp</code></td><td>Run the MCP server on stdio.</td></tr>
+          <tr><td><code>hook</code></td><td><code>session-start | user-prompt | stop</code>: Claude Code hook entry points (JSON on stdin).</td></tr>
+          <tr><td><code>remember</code></td><td>Save a note.</td></tr>
+          <tr><td><code>recall</code></td><td>Search notes and wiki. <code>--limit N --kind note|wiki --since DATE</code></td></tr>
+          <tr><td><code>context</code></td><td>Print the digest loaded at session start. <code>--max-chars N</code></td></tr>
+          <tr><td><code>status</code></td><td>Counts: notes, wiki pages, pending and dreamed transcripts, proposals.</td></tr>
+          <tr><td><code>log</code></td><td>Store a transcript from JSON events. <code>--file F | - --source S --id ID</code></td></tr>
+          <tr><td><code>import omp</code></td><td>Store omp sessions as transcripts. <code>--dir D --session FILE --all --since DATE</code></td></tr>
+          <tr><td><code>dream</code></td><td>Consolidate pending transcripts and notes into a proposal. <code>--budget TOKENS --instructions "..." --yes --dry-run --apply --since DATE --max-inputs N</code> (1 to 200, default 50)</td></tr>
+          <tr><td><code>dream --if-due</code></td><td>For schedulers: dream only when at least N (3) transcripts are pending, the newest is M (10) minutes old and the last dream H (6) hours old. <code>--min-pending N --idle-minutes M --cooldown-hours H</code></td></tr>
+          <tr><td><code>doctor</code></td><td>Read-only health check, PASS / WARN / FAIL per line, exit 1 on FAIL. <code>--json</code></td></tr>
+          <tr><td><code>proposals</code></td><td>List proposals and their status.</td></tr>
+          <tr><td><code>diff [id]</code></td><td>Line diff of a proposal against the live wiki (default: the newest one in review).</td></tr>
+          <tr><td><code>apply [id]</code></td><td>Write a proposal to the live wiki, skipping pages changed since the dream started. <code>--force</code></td></tr>
+          <tr><td><code>reject [id]</code></td><td>Discard a proposal.</td></tr>
+          <tr><td><code>restore &lt;path&gt;</code></td><td>Bring back an earlier version of a page. <code>--version N</code></td></tr>
+          <tr><td><code>history [path]</code></td><td>Versions of one page, or every change.</td></tr>
+          <tr><td><code>retention</code></td><td>Remove old dreamed transcripts and history. <code>--days N</code> (default 30)</td></tr>
+        </table>
+        <h3 id="flags">Common flags, exit codes, environment</h3>
+        <p><code>--space NAME</code> picks the space for any command that acts on one. Exit codes: <code>0</code> success, <code>2</code> a usage problem (unknown command, bad flag, or a dream with no API key or model, with a message saying what to set), <code>1</code> anything else. <code>hook</code> always exits <code>0</code>, so it can never block a session.</p>
+        <table>
+          <tr><th>Variable</th><th>Meaning</th></tr>
+          <tr><td><code>NEXORUM_HOME</code></td><td>Storage root. Default <code>~/.nexorum</code>.</td></tr>
+          <tr><td><code>NEXORUM_SPACE</code></td><td>Space when <code>--space</code> is not given. Default: the current folder's name.</td></tr>
+          <tr><td><code>NEXORUM_LLM_PROVIDER</code></td><td><code>anthropic</code> (default) or <code>openai</code> (any OpenAI-compatible endpoint).</td></tr>
+          <tr><td><code>NEXORUM_LLM_API_KEY</code></td><td>API key. Falls back to <code>ANTHROPIC_API_KEY</code> (anthropic) or <code>OPENAI_API_KEY</code> (openai).</td></tr>
+          <tr><td><code>NEXORUM_LLM_BASE_URL</code></td><td>Endpoint base URL. For openai the default is <code>http://localhost:20128/v1</code>.</td></tr>
+          <tr><td><code>NEXORUM_ANALYZER_MODEL</code></td><td>Model for analyzers. Default <code>claude-haiku-5-5</code> on anthropic; required on openai.</td></tr>
+          <tr><td><code>NEXORUM_ORGANIZER_MODEL</code></td><td>Model for the organizer. Same defaults.</td></tr>
+          <tr><td><code>NEXORUM_PROMPT_RECALL</code></td><td><code>0</code> turns off the recall that the prompt hook adds.</td></tr>
+          <tr><td><code>NEXORUM_DEBUG</code></td><td><code>1</code> prints full stack traces on errors.</td></tr>
+        </table>
+
+        <h2 id="mcp">MCP server</h2>
+        <p><code>nexorum mcp</code> speaks standard MCP over stdio and serves 17 tools plus the <code>nexorum://context</code> resource.</p>
+        <table>
+          <tr><th>Group</th><th>Tools</th></tr>
+          <tr><td>Notes</td><td><code>remember</code> <code>update_note</code> <code>forget</code> <code>list_notes</code></td></tr>
+          <tr><td>Recall</td><td><code>recall</code> <code>search_documents</code></td></tr>
+          <tr><td>Context</td><td><code>context</code></td></tr>
+          <tr><td>Wiki</td><td><code>read_document</code> <code>list_documents</code> <code>related_documents</code> <code>document_history</code></td></tr>
+          <tr><td>Sessions</td><td><code>save_transcript</code> <code>memory_status</code></td></tr>
+          <tr><td>Review (read only)</td><td><code>list_proposals</code> <code>show_proposal</code></td></tr>
+          <tr><td>Dream with no key</td><td><code>dream_prepare</code> <code>dream_submit</code></td></tr>
+        </table>
+        <pre><code># Claude Code
+claude mcp add nexorum -- npx -y nexorum mcp
+# Codex
+codex mcp add nexorum -- npx -y nexorum mcp
+# any client
+{ "mcpServers": { "nexorum": { "command": "npx", "args": ["-y", "nexorum", "mcp"] } } }</code></pre>
+        <p>The agent can read proposals but never apply them: applying is a command you run.</p>
+        <h3 id="other-clients">Other clients</h3>
+        <p>Clients that take an <code>mcpServers</code> JSON block (Cursor, Claude Desktop, Antigravity, Hermes Agent, omp, OpenClaw and others) accept the generic block above. Where the file lives differs per client; <code>nexorum init</code> writes it for Cursor, Claude Desktop and Hermes. Checked with the official MCP SDK client; Claude Code and Codex use their own documented commands. If a client does not pick it up, check its MCP docs for where the block goes, then run <code>nexorum doctor</code>.</p>
+
+        <h2 id="hooks">Claude Code hooks</h2>
+        <table>
+          <tr><th>Hook</th><th>Command</th><th>What it does</th></tr>
+          <tr><td>SessionStart</td><td><code>nexorum hook session-start</code></td><td>Injects the context digest (empty memory injects nothing).</td></tr>
+          <tr><td>UserPromptSubmit</td><td><code>nexorum hook user-prompt</code></td><td>Optional. Adds matching memory before a prompt, only when it matches.</td></tr>
+          <tr><td>Stop</td><td><code>nexorum hook stop</code></td><td>Saves the session transcript, scrubbed, for a later dream.</td></tr>
+        </table>
+        <p>Hooks always exit 0, so a hook can never block a prompt. <code>NEXORUM_PROMPT_RECALL=0</code> turns the prompt recall off.</p>
+
+        <h2 id="dreaming">Dreaming</h2>
+        <h3>How a run works</h3>
+        <ol>
+          <li>Pick inputs: pending transcripts (and notes) since the last dream, at most <code>--max-inputs</code>.</li>
+          <li>Estimate the tokens and ask before spending (skip the question with <code>--yes</code>).</li>
+          <li>Copy the live wiki to a staging wiki. Nothing touches the live wiki during the run.</li>
+          <li>One analyzer per input, three at a time (inputs over 120,000 characters are split into parts): it verifies what the pages claim against the input, enriches them with exact details (commands, flags, numbers, dates) and organizes them into small linked pages.</li>
+          <li>One organizer: merges duplicates, fixes links and keeps <code>_index.md</code> current.</li>
+          <li>The staged changes become a proposal for you to review.</li>
+        </ol>
+        <p>The agents only have document tools (<code>list_docs</code>, <code>read_doc</code>, <code>grep_docs</code>, <code>write_doc</code>, <code>edit_doc</code>, <code>delete_doc</code>, <code>rename_doc</code>, <code>submit</code>). There is no shell, network or file access.</p>
+        <h3>Providers</h3>
+        <p>Anthropic by default (<code>ANTHROPIC_API_KEY</code> or <code>NEXORUM_LLM_API_KEY</code>), or any OpenAI-compatible chat-completions endpoint with tool calling, including a local router: <code>NEXORUM_LLM_PROVIDER=openai</code> and <code>NEXORUM_LLM_BASE_URL</code>. Choose models with <code>NEXORUM_ANALYZER_MODEL</code> and <code>NEXORUM_ORGANIZER_MODEL</code> (default <code>claude-haiku-5-5</code> for Anthropic; required for an OpenAI-compatible endpoint). Transient errors (429, 5xx, 529) are retried with backoff; the key never appears in output.</p>
+        <h3>Token budgets</h3>
+        <p><code>--budget TOKENS</code> caps a run (default 3,000,000; a dream whose estimate is above it is refused). The cap is checked before each model call, so a run can overshoot only by the calls already in flight. You see progress at 50, 80 and 100 percent.</p>
+        <h3>Without a key</h3>
+        <p>Ask the agent you already run to dream. <code>dream_prepare</code> returns the rules, the current wiki and the new inputs; the agent writes the pages and calls <code>dream_submit</code>. The result is the same kind of proposal.</p>
+
+        <h2 id="search">Search</h2>
+        <p>BM25 keyword search over notes and wiki pages, with light stemming and extra weight on page titles. No embeddings and no vector database: results are deterministic and fast, and the agent can follow <code>[[links]]</code> from the index.</p>
+
+        <h2 id="security">Security model</h2>
+        <ul>
+          <li>Transcripts, notes and pages are treated as data, never as instructions; the dream prompts say so explicitly.</li>
+          <li>Secret patterns (API keys, tokens, private keys, JWTs, credentials in URLs and assignments) are replaced with <code>[REDACTED:kind]</code> before anything is written, including what a dream writes. This catches known patterns, not everything.</li>
+          <li>A dream only writes a proposal. Applying is always a command you run; a page changed since the dream started is skipped.</li>
+          <li>Every config file init edits is backed up first. Page paths are validated, so nothing is written outside the memory folder.</li>
+          <li>No telemetry. The only network traffic is a dream with your key, to the provider you set.</li>
+        </ul>
+
+        <h2 id="examples">Examples</h2>
+        <h3>Dream every night with a scheduler</h3>
+        <p>Dreams only when there is enough new material, nobody is mid-session and the last dream is old enough:</p>
+        <pre><code># cron (Linux, macOS)
+0 3 * * *  cd ~/projects/orbit-api && nexorum dream --if-due --yes
+
+# Windows Task Scheduler action
+nexorum dream --if-due --yes --space orbit-api</code></pre>
+        <h3>Store a session from another agent</h3>
+        <pre><code>echo '{"source":"my-agent","events":[{"role":"user","content":"deploys run with make release"},{"role":"assistant","content":"noted"}]}' \
+  | nexorum log --id session-42</code></pre>
+        <h3>Dream with a local or OpenAI-compatible model</h3>
+        <pre><code>export NEXORUM_LLM_PROVIDER=openai
+export NEXORUM_LLM_BASE_URL=http://localhost:20128/v1
+export NEXORUM_ANALYZER_MODEL=your-model NEXORUM_ORGANIZER_MODEL=your-model
+nexorum dream --budget 500000</code></pre>
+        <h3>Review before anything changes</h3>
+        <pre><code>nexorum dream --dry-run     # show what would be selected and the estimate
+nexorum dream --yes
+nexorum diff                # line diff against the live wiki
+nexorum apply               # or: nexorum reject
+nexorum history /deploys.md
+nexorum restore /deploys.md --version 2</code></pre>
+
+        <h2 id="troubleshooting">Troubleshooting</h2>
+        <h3>Start with doctor</h3>
+        <p><code>nexorum doctor</code> checks Node, the memory folder, the hooks, the MCP registration and the LLM settings, one PASS / WARN / FAIL line each, with a hint for every warning. It never changes anything.</p>
+        <h3>"No API key for provider"</h3>
+        <p>Set <code>NEXORUM_LLM_API_KEY</code> (or <code>ANTHROPIC_API_KEY</code>) for <code>nexorum dream</code>, or dream through your agent with <code>dream_prepare</code> / <code>dream_submit</code>, which needs no key.</p>
+        <h3>The dream was refused: estimate above the budget</h3>
+        <p>Raise <code>--budget</code>, or dream on fewer inputs with <code>--max-inputs N</code> or <code>--since DATE</code>.</p>
+        <h3>apply skipped a page</h3>
+        <p>The page changed after the dream started, so it was not overwritten. Run a new dream, or use <code>nexorum apply --force</code> to overwrite the changed live files.</p>
+        <h3>The agent does not seem to use its memory</h3>
+        <p>Check that the SessionStart hook is installed (<code>nexorum doctor</code>), and for Codex that the <code>AGENTS.md</code> block exists (<code>nexorum init --codex</code>). Memory is per project folder: make sure you are in the same folder, or pass <code>--space</code>.</p>
+        <h3>Git Bash on Windows turns /page.md into a Windows path</h3>
+        <p>Git Bash rewrites arguments that start with <code>/</code>. Prefix the command with <code>MSYS_NO_PATHCONV=1</code>, or run it from PowerShell or cmd.</p>
+        <h3>The prompt-recall hook is slow</h3>
+        <p>It needs the installed command: <code>npm install -g nexorum</code>. Through <code>npx</code> every prompt pays the start-up time. Turn it off with <code>NEXORUM_PROMPT_RECALL=0</code>.</p>
+
+        <h2 id="try">Simulation</h2>
+        <p><a href="/try/">/try</a> runs Nexorum's own engine in your browser: the same BM25 search, digest, secret scrubber, line diff and dream engine as the CLI, copied unchanged from the package. <b>Recorded</b> replays a scripted example (an agent forgets a fact between sessions, a dream rewrites its notes into a small wiki, and the same question gets a better answer); no model runs, but every search, redaction, staging write and diff is real. <b>Live</b>, when the site has it switched on, runs the same flow with a real model through a capped proxy (<code>/api/sim/status</code>, <code>/api/sim/v1/messages</code>): one analyzer per input and one organizer, a token budget per visit, requests rate-limited per visitor and a daily budget for the site. The tools run in your browser and nothing is saved.</p>
+
+        <h2 id="privacy">Privacy</h2>
+        <p>Local: notes, transcripts, wiki and history are files under <code>~/.nexorum</code>. Dreaming sends transcripts, notes and wiki pages to the LLM you configure, and nowhere else. Delete the folder to delete the memory. More on the <a href="/privacy/">privacy page</a>.</p>
+
+        <h2 id="faq">FAQ</h2>
+        <h3>Do I need an API key?</h3><p>No. You can dream through the agent you already use. A key only lets <code>nexorum dream</code> run on its own.</p>
+        <h3>Which agents work?</h3><p>Claude Code, Codex, Hermes, Cursor, Claude Desktop, and any MCP client over stdio. Not yet tested in every MCP client.</p>
+        <h3>Can I edit the wiki by hand?</h3><p>Yes. It is plain markdown. A dream that started before your edit will not overwrite it.</p>
+        <h3>How do I uninstall?</h3><p>Remove the hooks from <code>~/.claude/settings.json</code> (or restore the <code>.nexorum-bak</code> backup), remove the MCP server from your client, and delete <code>~/.nexorum</code>.</p>
+        <h3>What is $NEXR?</h3><p>The community token for Nexorum (contract: <code>{{CA}}</code>). You never need it to use the software.</p>
+      </article>
+    </div>
+  </div>
+</main>
