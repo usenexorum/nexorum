@@ -4,7 +4,7 @@ Everything below needs your own login, signature or payment.
 
 1. GitHub + npm: double-click `PUBLISH.cmd` (creates github.com/usenexorum/nexorum, pushes, runs the tests, publishes to npm).
 2. npm: inside `cli/`, run `npm login` then `npm publish` (package name `nexorum` was free on 2026-11-18).
-3. Domain: buy one (nexorum.dev was free on 2026-11-18).
+3. Domain: usenexorum.com (Rumahweb, A @/www -> 202.10.40.112). Redeploy the site: bash deploy/deploy.sh
 4. X: register the handle.
 5. Fill `tools/site-config.cjs` (ca, x, github, npm, site), then rebuild:
    node tools/build-site.cjs && node tools/build-pages.cjs && node tools/make-og.cjs
