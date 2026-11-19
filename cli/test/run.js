@@ -78,7 +78,7 @@ await t("help, version, no command (exit 2), unknown command (exit 2), usage lis
   assert.equal(h.code, 0);
   assert.equal(h.out.trim(), USAGE);
   for (const c of ["init", "mcp", "hook", "remember", "recall", "context", "status", "log", "import omp", "dream", "doctor", "proposals", "diff", "apply", "reject", "restore", "history", "retention"]) assert.ok(USAGE.includes(`  ${c}`), c);
-  assert.equal(cli(["--version"]).out.trim(), "0.2.1");
+  assert.equal(cli(["--version"]).out.trim(), "0.2.2");
   assert.equal(cli([]).code, 2);
   const u = cli(["frobnicate"]);
   assert.equal(u.code, 2);
@@ -497,7 +497,7 @@ await t("MCP over real stdio: protocol, 17 tools, calls, resource, errors, notif
   assert.equal(res.length, 11);
   const by = new Map(res.map((x) => [x.id, x]));
   assert.equal(by.get(1).result.protocolVersion, "2025-03-26");
-  assert.deepEqual(by.get(1).result.serverInfo, { name: "nexorum", version: "0.2.1" });
+  assert.deepEqual(by.get(1).result.serverInfo, { name: "nexorum", version: "0.2.2" });
   assert.deepEqual(
     by.get(2).result.tools.map((x) => x.name),
     ["remember", "update_note", "save_transcript", "recall", "forget", "context", "read_document", "search_documents", "list_documents", "memory_status", "list_notes", "related_documents", "document_history", "list_proposals", "show_proposal", "dream_prepare", "dream_submit"],
@@ -637,7 +637,7 @@ await t("init: Claude Code merge + backup, Codex AGENTS.md block, Cursor, Claude
   const cursor = JSON.parse(fs.readFileSync(path.join(H, ".cursor", "mcp.json"), "utf8"));
   assert.deepEqual(cursor.mcpServers, { other: { command: "x" }, nexorum: { command: "npx", args: ["-y", "nexorum", "mcp"] } });
   assert.deepEqual(JSON.parse(fs.readFileSync(claudeDesktopConfigPath(H), "utf8")).mcpServers.nexorum.args, ["-y", "nexorum", "mcp"]);
-  assert.match(r.out, /Done\. Memory lives in ~\/\.nexorum \(or \$NEXORUM_HOME\)\. Next: `nexorum status`\.\n$/);
+  assert.match(r.out, /Done\. Memory lives in ~\/\.nexorum \(or \$NEXORUM_HOME\)\. Restart your agent so it loads Nexorum\. Check memory any time: `nexorum status`\.\n$/);
 
   const again = cli(["init", "--home", H, "--dir", P, "--prompt-recall"]);
   assert.match(again.out, /--prompt-recall skipped: `nexorum` is not on your PATH/);

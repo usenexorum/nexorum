@@ -8,7 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { CliError } from "./args.js";
+import { CliError, selfCommand } from "./args.js";
 import { atomicWrite } from "./store.js";
 import { setupAgentsMd } from "./agents-md.js";
 
@@ -261,6 +261,6 @@ export function initCommand(flags, env, home) {
   if (want.hermes) setupHermes(home, { dryRun, env, useEnv: !flags.home });
   if (want.cursor) setupJsonClient("Cursor", path.join(home, ".cursor", "mcp.json"), { dryRun });
   if (want.desktop) setupJsonClient("Claude Desktop", desktopFile, { dryRun });
-  if (!dryRun) out("Done. Memory lives in ~/.nexorum (or $NEXORUM_HOME). Next: `nexorum status`.");
+  if (!dryRun) out(`Done. Memory lives in ~/.nexorum (or $NEXORUM_HOME). Restart your agent so it loads Nexorum. Check memory any time: \`${selfCommand(env)} status\`.`);
   return 0;
 }

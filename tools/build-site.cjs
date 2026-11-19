@@ -46,7 +46,7 @@ rep("<p>I'm a graphic designer with over a decade of experience. I create logos,
           <div class="cmd"><span class="lbl">CA</span><code class="ca">${esc(caText)}</code>${copyBtn(CFG.ca)}</div>
         </div>`);
 rep('<a href="#contact" class="btn">Let\'s work together</a>', '<a href="/try/" class="btn">Try the simulation</a>');
-rep('<a href="#work" class="text-link">See selected work</a>\n        </div>', '<a href="/docs/" class="text-link">Read the docs</a>\n        </div>\n        <p class="fine">Free and open source. No account. Nothing leaves your machine until you dream.</p>');
+rep('<a href="#work" class="text-link">See selected work</a>\n        </div>', '<a href="/docs/" class="text-link">Read the docs</a>\n        </div>\n        <p class="fine">Free and open source. No account. Needs Node.js 22+. Nothing leaves your machine until you dream.</p>');
 rep('aria-label="Available for new projects, start a project"', 'aria-label="Try the simulation"');
 rep('<a class="badge" href="#contact"', '<a class="badge" href="/try/"');
 rep('lengthAdjust="spacing">AVAILABLE FOR NEW PROJECTS ✦ 2026 ✦ </textPath>', 'lengthAdjust="spacing">MEMORY YOU APPROVE ✦ $NEXR ✦ </textPath>');

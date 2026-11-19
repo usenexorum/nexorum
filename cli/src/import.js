@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { ompJsonlToEvents, scrubSecrets, sha256Hex } from "./core/index.js";
-import { UsageError } from "./args.js";
+import { UsageError, selfCommand } from "./args.js";
 import { Store, isSafeId, nexorumRoot, sanitizeSpace } from "./store.js";
 
 const out = (s = "") => process.stdout.write(`${s}\n`);
@@ -132,6 +132,6 @@ export async function importCommand(positionals, flags, env) {
   if (!imported && !unchanged && !skipped) {
     out("No omp sessions matched. Sessions are matched by working directory; use --all to import every session, or --dir to point at another sessions folder.");
   }
-  if (imported) out('Next: nexorum dream   (reads pending transcripts; needs your LLM settings, see "nexorum --help")');
+  if (imported) out(`Next: ${selfCommand()} dream   (reads pending transcripts; needs your LLM settings, see "${selfCommand()} --help"), or ask your agent to run a Nexorum dream (no key needed)`);
   return 0;
 }

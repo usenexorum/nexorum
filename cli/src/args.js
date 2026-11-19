@@ -69,3 +69,9 @@ export function intFlag(flags, name, { min = 1, max = Number.MAX_SAFE_INTEGER, f
   if (n < min || n > max) throw new UsageError(`--${name} must be between ${min} and ${max}`);
   return n;
 }
+
+/** How the user should type the next command: "npx nexorum" when this run came through npx (no global install), else "nexorum". */
+export function selfCommand(env = process.env, argv1 = process.argv[1] ?? "") {
+  const viaNpx = env.npm_command === "exec" || /[\\/]_npx[\\/]/.test(argv1);
+  return viaNpx ? "npx nexorum" : "nexorum";
+}

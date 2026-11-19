@@ -22,7 +22,7 @@ export function resolveLlmConfig(env) {
   if (provider !== "anthropic" && provider !== "openai") throw new UsageError(`NEXORUM_LLM_PROVIDER must be "anthropic" or "openai" (got "${provider}").`);
   const fallbackKey = provider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY";
   const apiKey = env.NEXORUM_LLM_API_KEY || env[fallbackKey];
-  if (!apiKey) throw new UsageError(`No API key for provider "${provider}". Set NEXORUM_LLM_API_KEY (or ${fallbackKey}).`);
+  if (!apiKey) throw new UsageError(`No API key for provider "${provider}". Set NEXORUM_LLM_API_KEY (or ${fallbackKey}). No key? Ask your agent (Claude Code, Codex, Cursor...) to "run a Nexorum dream": it uses its own model through the dream_prepare and dream_submit tools.`);
   const llm = { provider, apiKey };
   if (env.NEXORUM_LLM_BASE_URL) llm.baseUrl = env.NEXORUM_LLM_BASE_URL;
   else if (provider === "openai") llm.baseUrl = DEFAULT_OPENAI_BASE_URL;
