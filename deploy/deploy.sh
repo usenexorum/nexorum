@@ -61,8 +61,25 @@ server {
 }
 NGINX
 fi
+# Security headers. nginx drops server-level add_header in any location that sets its own add_header,
+# so every such location includes this snippet. Only this site's config is touched; restored if nginx -t fails.
+SNIP=/etc/nginx/snippets/usenexorum-headers.conf
+mkdir -p /etc/nginx/snippets
+cat > $SNIP <<'HDR'
+add_header X-Content-Type-Options nosniff always;
+add_header Referrer-Policy strict-origin-when-cross-origin always;
+add_header X-Frame-Options SAMEORIGIN always;
+add_header Strict-Transport-Security "max-age=31536000" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+HDR
+cp $CONF /root/usenexorum.com.nginx.bak
+sed -i '/^[[:space:]]*location .*add_header/{/usenexorum-headers/!s/{ /{ include snippets\/usenexorum-headers.conf; /}' $CONF
+grep -q "server_tokens off" $CONF || sed -i 's/^\([[:space:]]*server_name usenexorum.com[^;]*;\)$/\1 server_tokens off;/' $CONF
+sed -i -E '/^[[:space:]]*add_header (X-Content-Type-Options|Referrer-Policy|X-Frame-Options) /d' $CONF
+grep -q "include snippets/usenexorum-headers.conf; # server" $CONF || sed -i 's/^\([[:space:]]*root \/var\/www\/usenexorum;\)$/\1 include snippets\/usenexorum-headers.conf; # server/' $CONF
+
 ln -sf $CONF /etc/nginx/sites-enabled/usenexorum.com
-nginx -t
+if ! nginx -t; then cp /root/usenexorum.com.nginx.bak $CONF; echo "!! nginx -t failed: usenexorum config restored, nothing reloaded"; exit 1; fi
 systemctl reload nginx
 rm -rf $D.old /root/usenexorum-site.tgz
 echo "-- deployed $(find $D -type f | wc -l) files"

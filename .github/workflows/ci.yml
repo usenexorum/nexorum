@@ -3,6 +3,10 @@ on:
   push:
   pull_request:
 
+# the workflow only reads the code; the token gets nothing more
+permissions:
+  contents: read
+
 jobs:
   test:
     name: ${{ matrix.os }} / node ${{ matrix.node }}

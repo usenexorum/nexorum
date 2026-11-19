@@ -1,6 +1,6 @@
 {
   "name": "nexorum",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Long-term memory for AI agents: notes, transcripts and a markdown wiki as plain files on your machine, plus a dream pass you review before anything changes. CLI, MCP server and Claude Code hooks.",
   "homepage": "https://usenexorum.com",
   "repository": {

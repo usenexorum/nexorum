@@ -24,12 +24,14 @@ repAll("family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&disp
 
 {
   const OG = CFG.site.replace(/\/$/, "") + "/og.png";
-  rep('<meta name="twitter:card" content="summary_large_image">', `<meta name="twitter:card" content="summary_large_image">\n<meta property="og:image" content="${OG}">\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n<meta name="twitter:image" content="${OG}">`);
+  rep('<meta name="twitter:card" content="summary_large_image">', `<meta name="twitter:card" content="summary_large_image">\n<meta property="og:image" content="${OG}">\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n<meta name="twitter:image" content="${OG}">
+<meta name="twitter:site" content="@${CFG.x.split("/").pop()}">
+<meta name="twitter:creator" content="@${CFG.x.split("/").pop()}">`);
 }
 
 // ---------- nav ----------
 rep('<li><a href="#services">Services</a></li>\n          <li><a href="#about">About</a></li>\n          <li><a href="#work">Work</a></li>\n          <li><a href="#process">Process</a></li>\n          <li><a href="#contact">Contact</a></li>',
-  '<li><a href="#services">Features</a></li>\n          <li><a href="#about">Free</a></li>\n          <li><a href="#work">Install</a></li>\n          <li><a href="#process">How it works</a></li>\n          <li><a href="/docs/">Docs</a></li>');
+  '<li><a href="#services">Features</a></li>\n          <li><a href="#about">Free</a></li>\n          <li><a href="#work">Install</a></li>\n          <li><a href="#process">How it works</a></li>\n          <li><a href="/docs/">Docs</a></li>\n          <li><a href="' + CFG.x + '" target="_blank" rel="noopener">X</a></li>');
 rep('<li class="menu-extra"><a href="mailto:hello@nexorum.io">hello@nexorum.io</a><span>Available for new projects</span></li>',
   `<li class="menu-extra"><a href="/try/">Try the simulation</a><span>$NEXR · free and open source</span></li>`);
 rep('<a class="status" href="#contact"><i></i>Available for projects</a>', '<a class="status" href="/try/"><i></i>Try the simulation</a>');
