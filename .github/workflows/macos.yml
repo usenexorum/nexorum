@@ -1,0 +1,51 @@
+name: macos
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"
+
+# the workflow only reads the code; the token gets nothing more
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / node ${{ matrix.node }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest]
+        node: [22, 24]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: CLI tests (unit, behaviors, CLI, end to end)
+        working-directory: cli
+        run: npm test
+
+      - name: Install the packed tarball like a user would
+        working-directory: cli
+        run: |
+          npm pack
+          npm install -g ./nexorum-*.tgz
+          export NEXORUM_HOME="$RUNNER_TEMP/nexorum-home"
+          nexorum --version
+          nexorum remember "ci smoke: tests run with npm test"
+          nexorum recall "tests" | grep -q "npm test"
+          nexorum init --all --dry-run --home "$RUNNER_TEMP/fake-home" --dir "$RUNNER_TEMP"
+          nexorum doctor --json > /dev/null || true
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' '{"jsonrpc":"2.0","method":"notifications/initialized"}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | nexorum mcp | grep -q '"dream_submit"'
+          nexorum --help | head -1
+
+      - name: Site server and the browser engine
+        run: |
+          node tools/build-engine.cjs
+          cd server && npm install --no-audit --no-fund && npm test
